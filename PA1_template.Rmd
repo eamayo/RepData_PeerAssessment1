@@ -107,3 +107,24 @@ plot(p)
 After imputing missing values the mean and median daily total number of steps are `r mean(dailySteps2$totalSteps)` and `r median(dailySteps2$totalSteps)` respectively, which are higher than the values obtained by simply ignoring the missing values. So imputing the missing values increased our estimates of the total daily number of steps.
 
 ## Are there differences in activity patterns between weekdays and weekends?
+First introduce a variable that can be used to split the data frame into weekend vs weekday measurements.
+```{r wkdayVsWkend, echo = TRUE}
+df$dayOfWeek <- weekdays(as.Date(df$date))
+df$isWeekend <- "weekday"
+df[df$dayOfWeek == "Saturday" | df$dayOfWeek == "Sunday",]$isWeekend <- "weekend"
+df$isWeekend <- factor(df$isWeekend, levels = c("weekday", "weekend"))
+```
+Now we can plot the activity patterns for each of the two groups
+```{r wkdayVsWkendPlot, echo = TRUE, warning = FALSE, fig.width = 12}
+avgDailyActivity2 <- ddply(df, .(interval, isWeekend), summarise, avgSteps = mean(steps, na.rm = TRUE))
+p <- ggplot(avgDailyActivity2, aes(interval, avgSteps))
+p <- p + facet_grid(isWeekend ~ .)
+p <- p + geom_point()
+p <- p + geom_line(size=1.2, colour="#2980B9")
+p <- p + labs(
+    title = "Average Daily Activity Pattern Weekdays vs. Weekend",
+    x = "5-min interval",
+    y = "Average Number of Steps"
+)
+plot(p)
+```
