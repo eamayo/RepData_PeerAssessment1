@@ -3,15 +3,84 @@
 
 ## Loading and preprocessing the data
 
+If the zip archive containing the activity monitoring dataset is not already present we download it from https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip. The csv file containing the activity monitoring data is then extracted from the archive and loaded into a data frame. No further preprocessing steps are needed.
+```{r loadData, echo = c(-1)}
+options(scipen = 1, digits = 2)
+if (!file.exists("activity.zip")) {
+  fileUrl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+  download.file(fileUrl, destfile = "activity.zip", method = "curl")
+}
+tempdir <- tempfile()
+dir.create(tempdir)
+unzip("activity.zip", exdir=tempdir)
+filesInArchive <- list.files(tempdir)
+if (length(filesInArchive) > 1) {
+  stop("Expected only one file in the zip archive but found more than one!")
+}
+fileName <- paste(tempdir, filesInArchive[1], sep = "/")
+df <- read.csv(fileName, stringsAsFactors = FALSE)
+```
+
 
 
 ## What is mean total number of steps taken per day?
+
+We are interested in the distribution of daily total number of steps. To obtain this we first group the dataset by date and compute the total number of steps for each day (ignoring missing values). 
+```{r numStepsPerDay, echo = TRUE}
+library(reshape2)
+library(plyr)
+dailySteps <- ddply(df, .(date), summarise, totalSteps = sum(steps, na.rm = TRUE))
+```
+We can now use the intermediate data frame produced above to make a histogram of the number of steps taken each day.
+```{r histogram, echo = TRUE, warning = FALSE, fig.width = 12}
+library(ggplot2)
+library(RColorBrewer)
+library(scales)
+library(ggthemes)
+
+old <- theme_set(theme_economist_white(gray_bg=FALSE))
+theme_update(
+    plot.title = element_text(size=18, family="Helvetica", color="black", hjust=0),
+    axis.text.y = element_text(size=10, family="Helvetica", color="#7F8C8D"),
+    axis.text.x = element_text(size=10, family="Helvetica", color="#7F8C8D"),
+    axis.title.x = element_text(size=15, color="#7F8C8D"),
+    axis.title.y = element_text(size=15, angle=90, color="#7F8C8D")
+)
+p <- ggplot(dailySteps, aes(date, totalSteps))
+p <- p + geom_bar(stat="identity", fill="#2980B9")
+p <- p + labs(
+    title = "Total Number of Steps Taken Each Day",
+    x = "Date",
+    y = "Total Steps"
+)
+p <- p + theme(axis.text.x = element_text(angle = 90))
+plot(p)
+```
+
+The mean and median daily total number of steps are `r mean(dailySteps$totalSteps)` and `r median(dailySteps$totalSteps)` respectively.
 
 
 
 ## What is the average daily activity pattern?
 
+In order to get the average daily activity pattern we first group the dataset by 5-minute interval and then compute the average number of steps across all days (ignoring missing values). 
+```{r avgDailyActivityPattern, echo = TRUE}
+avgDailyActivity <- ddply(df, .(interval), summarise, avgSteps = mean(steps, na.rm = TRUE))
+```
+We can now make a time-series plot of the average daily activity.
+```{r activityTimeSeries, echo = TRUE, warning = FALSE, fig.width = 12}
+p <- ggplot(avgDailyActivity, aes(interval, avgSteps))
+p <- p + geom_point()
+p <- p + geom_line(size=1.2, colour="#2980B9")
+p <- p + labs(
+    title = "Average Daily Activity Pattern",
+    x = "5-min interval",
+    y = "Average Steps"
+)
+plot(p)
+```
 
+From the above chart we can see that 5-minute interval `r avgDailyActivity[which.max(avgDailyActivity$avgSteps), "interval"]`, on average across all the days in the dataset, contains the maximum number of steps.
 
 ## Imputing missing values
 
