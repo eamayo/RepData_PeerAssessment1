@@ -83,7 +83,27 @@ plot(p)
 From the above chart we can see that 5-minute interval `r avgDailyActivity[which.max(avgDailyActivity$avgSteps), "interval"]`, on average across all the days in the dataset, contains the maximum number of steps.
 
 ## Imputing missing values
-
-
+The total number of missing values in the dataset is `r nrow(df) - sum(complete.cases(df))`. We will fill in each of these missing values with the mean of the corresponding 5-minute interval.
+```{r fillNA, echo = TRUE}
+for (idx in 1:nrow(avgDailyActivity)) {
+  fillVal <- avgDailyActivity[idx, "avgSteps"] 
+  currInterval <- avgDailyActivity[idx, "interval"]
+  df[is.na(df$steps) & (df$interval == currInterval),]$steps <- fillVal
+}
+```
+Let's examine the impact of the above imputation step. First we see if the distribution of daily total number of steps has changed.
+```{r meanNumStepsPerDay2, echo = TRUE, fig.width = 12}
+dailySteps2 <- ddply(df, .(date), summarise, totalSteps = sum(steps, na.rm = TRUE))
+p <- ggplot(dailySteps2, aes(date, totalSteps))
+p <- p + geom_bar(stat="identity", fill="#2980B9")
+p <- p + labs(
+    title = "Total Number of Steps Taken Each Day (After Imputing Missing Values)",
+    x = "Date",
+    y = "Total Steps"
+)
+p <- p + theme(axis.text.x = element_text(angle = 90))
+plot(p)
+```
+After imputing missing values the mean and median daily total number of steps are `r mean(dailySteps2$totalSteps)` and `r median(dailySteps2$totalSteps)` respectively, which are higher than the values obtained by simply ignoring the missing values. So imputing the missing values increased our estimates of the total daily number of steps.
 
 ## Are there differences in activity patterns between weekdays and weekends?
