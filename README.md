@@ -1,3 +1,5 @@
+## Note to Reviewers of my Assignment. I forgot to check-in the .md file for my assignment. The latest submission now has this file. Hopefully you'll take a look at that. Apologies for the inconvenience!
+
 ## Introduction
 
 It is now possible to collect a large amount of data about personal
